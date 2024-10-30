@@ -1,4 +1,4 @@
-SUPPORTED_OPERATORS = ['+', '-', '*']
+SUPPORTED_OPERATORS = ['+', '-', '*', '/']
 SUPPORTED_BRACKETS = ['(', ')']
 WHITESPACE = [' ', '\n', '\t']
 
@@ -53,7 +53,7 @@ def lex(code: str) -> list[Token]:
 def parse(tokens):
     print_lex_result(tokens)
     tokens = parse_brackets(tokens)
-    tokens = parse_set_of_operations(tokens, ['*'])
+    tokens = parse_set_of_operations(tokens, ['*', '/'])
     tokens = parse_set_of_operations(tokens, ['+', '-'])
     if len(tokens) != 1:
         return Token('Could not parse expression', 'error')
@@ -127,13 +127,16 @@ def parse_simple_operator(tokens, index):
         tokens = replace_tokens(index - 1, index + 1, Token(tokens[index - 1].value - tokens[index + 1].value, 'number'), tokens)
     elif token.value == '*':
         tokens = replace_tokens(index - 1, index + 1, Token(tokens[index - 1].value * tokens[index + 1].value, 'number'), tokens)
+    elif token.value == '/':
+        if tokens[index + 1].value == 0:
+            return [Token('Division by zero error!', 'error')]
+        tokens = replace_tokens(index - 1, index + 1, Token(tokens[index - 1].value // tokens[index + 1].value, 'number'), tokens)
     return tokens
 
 
 def replace_tokens(begin, end, replacement, tokens):
     return tokens[:begin] + [replacement] + tokens[end + 1:]
 
-
-example = ' 2 * ( 2 + (2 - 2)) * 3'
+example = '8 / 2 * (2 + (2 - 2)) * 3'
 lexed = lex(example)
 print(parse(lexed).value)
