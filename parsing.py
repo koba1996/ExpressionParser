@@ -1,4 +1,4 @@
-SUPPORTED_OPERATORS = ['+', '-', '*', '/']
+SUPPORTED_OPERATORS = ['+', '-', '*', '/', '^']
 SUPPORTED_BRACKETS = ['(', ')']
 WHITESPACE = [' ', '\n', '\t']
 
@@ -66,6 +66,7 @@ def lex(code: str) -> list[Token]:
 def parse(tokens):
     print_lex_result(tokens)
     tokens = parse_brackets(tokens)
+    tokens = parse_set_of_operations(tokens, ['^'], reverse=True)
     tokens = parse_set_of_operations(tokens, ['*', '/'])
     tokens = parse_set_of_operations(tokens, ['+', '-'])
     if len(tokens) != 1:
@@ -108,19 +109,23 @@ def parse_brackets(tokens):
     return tokens
 
 
-def parse_set_of_operations(tokens, operators_to_be_parsed):
-    i = 0
-    while i < len(tokens):
+def parse_set_of_operations(tokens, operators_to_be_parsed, reverse=False):
+    i = len(tokens) - 1 if reverse else 0
+    while i < len(tokens) and i >= 0:
         token = tokens[i]
         if token.type == 'op' and token.value in operators_to_be_parsed:
             try:
                 if i == 0 or i == len(tokens) - 1:
                     raise IndexError
+                if tokens[i - 1].type == 'error':
+                    return [tokens[i - 1]]
                 if tokens[i + 1].type == 'error':
                     return [tokens[i + 1]]
                 if tokens[i - 1].type == 'op' or tokens[i + 1].type == 'op':
                     raise TypeError
                 tokens = parse_simple_operator(tokens, i)
+                if reverse:
+                    i -= 2
             except IndexError:
                 return [Token('Operation started or ended with operator!', 'error')]
             except TypeError:
@@ -130,7 +135,7 @@ def parse_set_of_operations(tokens, operators_to_be_parsed):
         elif token.type == 'error':
             return [token]
         else:
-            i += 1
+            i = (i - 1) if reverse else (i + 1)
     return tokens
 
 
@@ -146,13 +151,17 @@ def parse_simple_operator(tokens, index):
         if tokens[index + 1].value == 0:
             return [Token('Division by zero error!', 'error')]
         tokens = replace_tokens(index - 1, index + 1, Token(tokens[index - 1].value // tokens[index + 1].value, 'number'), tokens)
+    elif token.value == '^':
+        if tokens[index + 1].value == 0 and tokens[index - 1].value == 0:
+            return [Token('0th power of 0!', 'error')]
+        tokens = replace_tokens(index - 1, index + 1, Token(tokens[index - 1].value ** tokens[index + 1].value, 'number'), tokens)
     return tokens
 
 
 def replace_tokens(begin, end, replacement, tokens):
     return tokens[:begin] + [replacement] + tokens[end + 1:]
 
-example = '3 * (2 - -4)'
+example = '2*2^3'
 lexed = lex(example)
 print(parse(lexed).value)
 
