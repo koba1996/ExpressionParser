@@ -113,7 +113,7 @@ def parse_set_of_operations(tokens, operators_to_be_parsed):
             except:
                 return [Token('Error during parsing!', 'error')]
         elif token.type == 'error':
-            return [Token(token.value, 'error')]
+            return [token]
         else:
             i += 1
     return tokens
@@ -137,6 +137,6 @@ def parse_simple_operator(tokens, index):
 def replace_tokens(begin, end, replacement, tokens):
     return tokens[:begin] + [replacement] + tokens[end + 1:]
 
-example = '8 / 2 * (2 + (2 - 2)) * 3'
+example = '(((2*2 + 2**0 + 3*3)*2)*2)*2 '
 lexed = lex(example)
 print(parse(lexed).value)
