@@ -16,6 +16,8 @@ class Token:
             raise ValueError
         self.type = type
 
+    def __repr__(self):
+        return f'Token({self.value}, {self.type})'
 
 def print_lex_result(tokens):
     result = '['
@@ -30,7 +32,18 @@ def lex(code: str) -> list[Token]:
     i = 0
     tokens = []
     while i < len(code):
-        if '0' <= code[i] <= '9':
+        if code[i] == '-':
+            if (len(tokens) == 0 or tokens[-1].type == 'op') and len(code) > i + 1 and '0' <= code[i + 1] <= '9':
+                number = '-'
+                i += 1
+                while i < len(code) and '0' <= code[i] <= '9':
+                    number += code[i]
+                    i += 1
+                tokens.append(Token(number, 'number'))
+            else:
+                tokens.append(Token('-', 'op'))
+                i += 1
+        elif '0' <= code[i] <= '9':
             number = code[i]
             i += 1
             while i < len(code) and '0' <= code[i] <= '9':
@@ -101,8 +114,10 @@ def parse_set_of_operations(tokens, operators_to_be_parsed):
         token = tokens[i]
         if token.type == 'op' and token.value in operators_to_be_parsed:
             try:
-                if i == 0:
+                if i == 0 or i == len(tokens) - 1:
                     raise IndexError
+                if tokens[i + 1].type == 'error':
+                    return [tokens[i + 1]]
                 if tokens[i - 1].type == 'op' or tokens[i + 1].type == 'op':
                     raise TypeError
                 tokens = parse_simple_operator(tokens, i)
@@ -137,6 +152,14 @@ def parse_simple_operator(tokens, index):
 def replace_tokens(begin, end, replacement, tokens):
     return tokens[:begin] + [replacement] + tokens[end + 1:]
 
-example = '(((2*2 + 2**0 + 3*3)*2)*2)*2 '
+example = '3 * (2 - -4)'
 lexed = lex(example)
 print(parse(lexed).value)
+
+'''example = '-5 + (3 * (4 - 6))'
+lexed = lex(example)
+print(parse(lexed).value)
+
+example = '(10 - (4 + -2)) * -3'
+lexed = lex(example)
+print(parse(lexed).value)'''
