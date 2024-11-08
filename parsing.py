@@ -18,6 +18,11 @@ class Token:
 
     def __repr__(self):
         return f'Token({self.value}, {self.type})'
+    
+    def __eq__(self, other):
+        if isinstance(other, Token):
+            return self.value == other.value and self.type == other.type
+        return False
 
 def print_lex_result(tokens):
     result = '['
